@@ -1,9 +1,5 @@
 package neurus
 
-import (
-	"github.com/soypat/neurus/mnist"
-)
-
 type DataPoint struct {
 	inputs         []float64
 	expectedOutput []float64
@@ -19,17 +15,38 @@ func (nn NetworkLvl0) Cost(trainingData []DataPoint) (totalCost float64) {
 	return totalCost / float64(len(trainingData))
 }
 
-func TrainLvl0(nn NetworkLvl0, trainingData []mnist.Image64, learnRate float64) {
+func TrainLvl0(nn NetworkLvl0, trainingData []DataPoint, learnRate float64) {
 	const h = 0.0001
-	originalCost := 0x1p3
+	numNodeIn, numNodeOut := nn.Dims()
+
+	originalCost := nn.Cost(trainingData)
 	for _, layer := range nn.layers {
+		costGradientB := make([]float64, len(layer.biases))
+		costGradientW := make([][]float64, len(layer.weights))
+		for i := range layer.weights {
+			costGradientW[i] = make([]float64, len(layer.weights[i]))
+		}
 		// Calculate cost gradient for current weights.
 		for nodeIn := range layer.weights {
 			for nodeOut := range layer.weights[nodeIn] {
 				layer.weights[nodeIn][nodeOut] += h
-				// deltaCost :=
-
+				costDifference := nn.Cost(trainingData) - originalCost
+				costGradientW[nodeIn][nodeOut] = costDifference / h
+				layer.weights[nodeIn][nodeOut] -= h // Set the layer weight back to original value.
 			}
 		}
+
+		// Calculate the cost gradient for the current biases.
+		for biasIndex := range layer.biases {
+			layer.biases[biasIndex] += h
+			costDifference := nn.Cost(trainingData) - originalCost
+			costGradientB[biasIndex] = costDifference / h
+			layer.biases[biasIndex] -= h // Reset layer bias to original value.
+		}
+
 	}
+}
+
+func applyAllGradients(nn NetworkLvl0, gradientW [][]float64) {
+
 }

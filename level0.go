@@ -52,6 +52,13 @@ func (nn NetworkLvl0) Classify(expectedOutput, input []float64) (classification 
 	return maxIdx, cost
 }
 
+// Dims returns the input and output dimension of the neural network.
+func (nn NetworkLvl0) Dims() (input, output int) {
+	firstLayer := nn.layers[0]
+	lastLayer := nn.layers[len(nn.layers)-1]
+	return len(firstLayer.weights), len(lastLayer.biases)
+}
+
 type LayerLvl0 struct {
 	weights            [][]float64
 	biases             []float64
