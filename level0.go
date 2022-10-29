@@ -27,6 +27,7 @@ func NewNetworkLvl0(activationFunction func(float64) float64, layerSizes ...int)
 }
 
 // CalculateOutputs runs the inputs through the network and returns the output values.
+// This is also known as feeding the neural network, or Feedthrough.
 func (nn NetworkLvl0) CalculateOutputs(input []float64) []float64 {
 	for _, layer := range nn.layers {
 		input = layer.CalculateOutputs(input)

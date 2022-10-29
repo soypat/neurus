@@ -24,7 +24,7 @@ func step(f float64) float64 {
 	return 1
 }
 
-func sigmoid(f float64) float64 {
+func Sigmoid(f float64) float64 {
 	return 1.0 / (1 + math.Exp(-f))
 }
 
@@ -37,6 +37,14 @@ func silu(f float64) float64 {
 	return f / (1 + math.Exp(-f))
 }
 
-func relu(f float64) float64 {
+func ReLU(f float64) float64 {
 	return math.Max(0, f)
+}
+
+// MaxReLU returns a ReLU with a maximum returned value.
+func MaxReLU(maxReturnedValue float64) func(float64) float64 {
+	max := maxReturnedValue
+	return func(fsub float64) float64 {
+		return math.Max(0, math.Min(max, fsub))
+	}
 }

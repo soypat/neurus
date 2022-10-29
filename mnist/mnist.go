@@ -76,18 +76,39 @@ func Load64() (training, test, validation []Image64) {
 
 const (
 	imgSize    = 28
-	pixelCount = imgSize * imgSize
+	PixelCount = imgSize * imgSize
 )
 
 var _ image.Image = &Image{}
 
+// Image represents a single digit labelled 28x28 image from the MNIST database.
+// Image data is stored as a float32 between 0 and 1 representing the pixel color at position i.
+// To get the pixel at row i, column j:
+//
+//	pixel := Image.Data[i*28+j]
+//
+// Image also implements the image.Image interface:
+//
+//	file, _ := os.Create("mnist.png")
+//	png.Encode(&Image, file)
 type Image struct {
-	Data [pixelCount]float32
+	Data [PixelCount]float32
 	Num  uint8
 }
 
+// Image represents a single digit labelled 28x28 image from the MNIST database.
+// Image data is stored as a float64 between 0 and 1 representing the pixel color
+// at position i.
+// To get the pixel at row i, column j:
+//
+//	pixel := Image.Data[i*28+j]
+//
+// Image also implements the image.Image interface:
+//
+//	file, _ := os.Create("mnist.png")
+//	png.Encode(&Image, file)
 type Image64 struct {
-	Data [pixelCount]float64
+	Data [PixelCount]float64
 	Num  uint8
 }
 
