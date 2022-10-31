@@ -18,3 +18,5 @@
 *.csv
 *1000.png
 *_test.bin.gz
+*.pprof
+.vscode/*

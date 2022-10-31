@@ -44,6 +44,7 @@ func (nn NetworkLvl0) Classify(expectedOutput, input []float64) (classification 
 		// Find classification result of Neural Network
 		if activation > maxValue {
 			maxIdx = nodeOut
+			maxValue = activation
 		}
 		// Find the cost (or `loss`) knowing the expected output.
 		// When we train our network we want to minimize this value.
@@ -55,15 +56,19 @@ func (nn NetworkLvl0) Classify(expectedOutput, input []float64) (classification 
 
 // Dims returns the input and output dimension of the neural network.
 func (nn NetworkLvl0) Dims() (input, output int) {
-	firstLayer := nn.layers[0]
-	lastLayer := nn.layers[len(nn.layers)-1]
-	return len(firstLayer.weights), len(lastLayer.biases)
+	input, _ = nn.layers[0].Dims()
+	_, output = nn.layers[len(nn.layers)-1].Dims()
+	return input, output
 }
 
 type LayerLvl0 struct {
 	weights            [][]float64
 	biases             []float64
 	activationFunction func(v float64) float64
+}
+
+func (l LayerLvl0) Dims() (input, output int) {
+	return len(l.weights), len(l.biases)
 }
 
 func newLayerLvl0(numNodesIn, numNodesOut int, activationFunction func(float64) float64) LayerLvl0 {
@@ -85,14 +90,14 @@ func newLayerLvl0(numNodesIn, numNodesOut int, activationFunction func(float64) 
 
 // CalculateOutputs runs the inputs through the layer and
 func (layer LayerLvl0) CalculateOutputs(inputs []float64) (activations []float64) {
-	numNodesOut := len(layer.biases)
+	numNodesIn, numNodesOut := layer.Dims()
 	// activations contains the result of the input feedthrough the weights
 	// its elements are commonly called "weighted inputs".
 	activations = make([]float64, numNodesOut)
-	for nodeOut, bias := range layer.biases {
-		weightedInput := bias
-		for nodeIn, weight := range layer.weights {
-			weightedInput += inputs[nodeIn] + weight[nodeOut]
+	for nodeOut := 0; nodeOut < numNodesOut; nodeOut++ {
+		weightedInput := layer.biases[nodeOut]
+		for nodeIn := 0; nodeIn < numNodesIn; nodeIn++ {
+			weightedInput += inputs[nodeIn] + layer.weights[nodeIn][nodeOut] // Simultaneous access hotspot?
 		}
 		activations[nodeOut] = layer.activationFunction(weightedInput)
 	}

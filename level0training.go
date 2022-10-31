@@ -1,10 +1,5 @@
 package neurus
 
-type DataPoint struct {
-	Inputs         []float64
-	ExpectedOutput []float64
-}
-
 type TrainerLvl0 struct {
 	layers []layerTrainerLvl0
 }
@@ -32,7 +27,7 @@ func NewTrainerFromNetworkLvl0(nn NetworkLvl0) (tr TrainerLvl0) {
 // passed through the neural network.
 func (nn NetworkLvl0) Cost(trainingData []DataPoint) (totalCost float64) {
 	for _, datapoint := range trainingData {
-		_, cost := nn.Classify(datapoint.ExpectedOutput, datapoint.Inputs)
+		_, cost := nn.Classify(datapoint.ExpectedOutput, datapoint.Input)
 		totalCost += cost
 	}
 	return totalCost / float64(len(trainingData))
@@ -42,9 +37,10 @@ func (tr TrainerLvl0) TrainLvl0(nn NetworkLvl0, trainingData []DataPoint, h, lea
 	originalCost := nn.Cost(trainingData)
 	for layerIdx, layer := range nn.layers {
 		trLayer := tr.layers[layerIdx]
+		numNodesIn, numNodesOut := layer.Dims()
 		// Calculate cost gradient for current weights.
-		for nodeIn := range layer.weights {
-			for nodeOut := range layer.weights[nodeIn] {
+		for nodeIn := 0; nodeIn < numNodesIn; nodeIn++ {
+			for nodeOut := 0; nodeOut < numNodesOut; nodeOut++ {
 				layer.weights[nodeIn][nodeOut] += h
 				costDifference := nn.Cost(trainingData) - originalCost
 				trLayer.costGradW[nodeIn][nodeOut] = costDifference / h
@@ -64,9 +60,10 @@ func (tr TrainerLvl0) TrainLvl0(nn NetworkLvl0, trainingData []DataPoint, h, lea
 }
 
 func (trl layerTrainerLvl0) applyAllGradients(layer LayerLvl0, learnRate float64) {
-	for nodeOut := range layer.biases {
+	numNodesIn, numNodesOut := layer.Dims()
+	for nodeOut := 0; nodeOut < numNodesOut; nodeOut++ {
 		layer.biases[nodeOut] -= trl.costGradB[nodeOut] * learnRate
-		for nodeIn := range layer.weights[nodeOut] {
+		for nodeIn := 0; nodeIn < numNodesIn; nodeIn++ {
 			layer.weights[nodeIn][nodeOut] -= trl.costGradW[nodeIn][nodeOut] * learnRate
 		}
 	}

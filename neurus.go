@@ -3,7 +3,26 @@ package neurus
 import (
 	"math"
 	"math/rand"
+
+	"github.com/soypat/neurus/mnist"
 )
+
+func MNISTToDatapoints(images []mnist.Image64) []DataPoint {
+	datapoints := make([]DataPoint, len(images))
+	eoutputs := make([]float64, len(images)*10) // contiguous representation in memory, might make access slightly faster.
+	for i := range datapoints {
+		datapoints[i].Input = images[i].Data[:]
+		eidx := i * 10
+		datapoints[i].ExpectedOutput = eoutputs[eidx : eidx+10]
+		datapoints[i].ExpectedOutput[images[i].Num] = 1
+	}
+	return datapoints
+}
+
+type DataPoint struct {
+	Input          []float64
+	ExpectedOutput []float64
+}
 
 // randomSlice returns a slice with random floats between -1 and +1.
 func randomSlice(n int) []float64 {
