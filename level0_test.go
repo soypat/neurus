@@ -2,7 +2,10 @@ package neurus_test
 
 import (
 	"fmt"
+	"image/png"
+	"math"
 	"math/rand"
+	"os"
 	"strconv"
 
 	"github.com/soypat/neurus"
@@ -14,7 +17,7 @@ func ExampleNetworkLvl0_twoD() {
 		batchSize = 10
 		h         = 0.0001
 		learnRate = 0.05
-		epochs    = 12
+		epochs    = 1
 	)
 	canonClassifier := func(x, y float64) int {
 		if -x*x+0.5 > y {
@@ -25,9 +28,11 @@ func ExampleNetworkLvl0_twoD() {
 	m := neurus.NewModel2D(2, canonClassifier)
 	trainData := m.Generate2DData(400)
 	testData := m.Generate2DData(100)
-
-	nn := neurus.NewNetworkLvl0(neurus.ReLU, 2, 4, 4, 2)
-
+	fp, _ := os.Create("canon.png")
+	m.AddScatter(trainData)
+	png.Encode(fp, m)
+	fp.Close()
+	nn := neurus.NewNetworkLvl0(neurus.Sigmoid, 2, 2, 2)
 	initialCost := nn.Cost(testData)
 
 	trainer := neurus.NewTrainerFromNetworkLvl0(nn)
@@ -44,6 +49,12 @@ func ExampleNetworkLvl0_twoD() {
 		class, cost := nn.Classify(testData[i].ExpectedOutput, testData[i].Input)
 		fmt.Println(expectedClass, class, cost)
 	}
+	m.Classifier = func(x, y float64) int {
+		return maxf(nn.CalculateOutputs([]float64{x, y}))
+	}
+	fp, _ = os.Create("nn.png")
+	png.Encode(fp, m)
+	fp.Close()
 	//output:
 	// start cost:
 }
@@ -83,4 +94,16 @@ func ExampleNetworkLvl0_mnist() {
 	}
 	//output:
 	// start cost:
+}
+
+func maxf(s []float64) int {
+	idx := -1
+	max := math.Inf(-1)
+	for i, vs := range s {
+		if vs > max {
+			idx = i
+			max = vs
+		}
+	}
+	return idx
 }

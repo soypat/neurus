@@ -20,3 +20,4 @@
 *_test.bin.gz
 *.pprof
 .vscode/*
+*.png
