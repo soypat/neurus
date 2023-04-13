@@ -97,7 +97,7 @@ func (layer LayerLvl0) CalculateOutputs(inputs []float64) (activations []float64
 	for nodeOut := 0; nodeOut < numNodesOut; nodeOut++ {
 		weightedInput := layer.biases[nodeOut]
 		for nodeIn := 0; nodeIn < numNodesIn; nodeIn++ {
-			weightedInput += inputs[nodeIn] + layer.weights[nodeIn][nodeOut] // Simultaneous access hotspot?
+			weightedInput += inputs[nodeIn] * layer.weights[nodeIn][nodeOut] // Simultaneous access hotspot?
 		}
 		activations[nodeOut] = layer.activationFunction(weightedInput)
 	}
