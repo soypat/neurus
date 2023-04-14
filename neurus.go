@@ -29,7 +29,7 @@ type DataPoint struct {
 //	r*a + b
 //
 // where r is a random float between 0 and 1.
-func randomSlice(n int, a, b float64) []float64 {
+func randomSlice(n int, a, b float64, rng *rand.Rand) []float64 {
 	slice := make([]float64, n)
 	for i := range slice {
 		// Get random value between -1 and +1
