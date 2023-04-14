@@ -55,6 +55,9 @@ func (tr TrainerLvl0) TrainLvl0(nn NetworkLvl0, trainingData []DataPoint, h, lea
 			trLayer.costGradB[biasIndex] = costDifference / h
 			layer.biases[biasIndex] -= h // Reset layer bias to original value.
 		}
+	}
+	for i, layer := range nn.layers {
+		trLayer := tr.layers[i]
 		trLayer.applyAllGradients(layer, learnRate)
 	}
 }

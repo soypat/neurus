@@ -17,7 +17,8 @@ func ExampleNetworkLvl0_twoD() {
 		batchSize = 10
 		h         = 0.0001
 		learnRate = 0.05
-		epochs    = 1
+		epochs    = 200000
+		numPrints = 10
 	)
 	canonClassifier := func(x, y float64) int {
 		if -x*x+0.5 > y {
@@ -32,23 +33,25 @@ func ExampleNetworkLvl0_twoD() {
 	m.AddScatter(trainData)
 	png.Encode(fp, m)
 	fp.Close()
-	nn := neurus.NewNetworkLvl0(neurus.Sigmoid, 2, 2, 2)
+	nn := neurus.NewNetworkLvl0(neurus.Sigmoid, 2, 3, 2, 2)
 	initialCost := nn.Cost(testData)
 
 	trainer := neurus.NewTrainerFromNetworkLvl0(nn)
 	for epoch := 0; epoch < epochs; epoch++ {
-		fmt.Printf("epoch %d, cost: %0.5f\n", epoch, nn.Cost(testData))
 		startIdx := rand.Intn(len(trainData) - batchSize)
 		miniBatch := trainData[startIdx : startIdx+batchSize]
 		trainer.TrainLvl0(nn, miniBatch, h, learnRate)
+		if (epoch+1)%(epochs/numPrints) == 0 {
+			fmt.Printf("epoch %d, cost: %0.5f\n", epoch, nn.Cost(testData))
+		}
 	}
 	fmt.Printf("start cost:%0.5f, end cost: %0.5f", initialCost, nn.Cost(testData))
-	for i := range testData {
-		x, y := testData[i].Input[0], testData[i].Input[1]
-		expectedClass := canonClassifier(x, y)
-		class, cost := nn.Classify(testData[i].ExpectedOutput, testData[i].Input)
-		fmt.Println(expectedClass, class, cost)
-	}
+	// for i := range testData {
+	// 	x, y := testData[i].Input[0], testData[i].Input[1]
+	// 	expectedClass := canonClassifier(x, y)
+	// 	class, cost := nn.Classify(testData[i].ExpectedOutput, testData[i].Input)
+	// 	fmt.Println(expectedClass, class, cost)
+	// }
 	m.Classifier = func(x, y float64) int {
 		return maxf(nn.CalculateOutputs([]float64{x, y}))
 	}

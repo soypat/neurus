@@ -24,12 +24,16 @@ type DataPoint struct {
 	ExpectedOutput []float64
 }
 
-// randomSlice returns a slice with random floats between -1 and +1.
-func randomSlice(n int) []float64 {
+// randomSlice returns a slice with random floats of values
+//
+//	r*a + b
+//
+// where r is a random float between 0 and 1.
+func randomSlice(n int, a, b float64) []float64 {
 	slice := make([]float64, n)
 	for i := range slice {
 		// Get random value between -1 and +1
-		slice[i] = rand.Float64()*2 - 1
+		slice[i] = rand.Float64()*a + b
 	}
 	return slice
 }
