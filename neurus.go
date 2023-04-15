@@ -71,3 +71,173 @@ func MaxReLU(maxReturnedValue float64) func(float64) float64 {
 		return math.Max(0, math.Min(max, fsub))
 	}
 }
+
+type ActivationFunc interface {
+	CalculateFromInputs(inputs []float64, stride int)
+	Activate(index int) float64
+	Derivative(index int) float64
+}
+
+var _ ActivationFunc = &SoftMax{}
+
+type SoftMax struct {
+	expInputs []float64
+	expSum    float64
+}
+
+func (s *SoftMax) CalculateFromInputs(inputs []float64, stride int) {
+	if stride != 1 {
+		panic("bad or unsupported stride")
+	}
+	if len(inputs) > len(s.expInputs) {
+		s.expInputs = make([]float64, len(inputs))
+	}
+	var expSum float64
+	for i := 0; i < len(inputs); i += stride {
+		exp := math.Exp(inputs[i])
+		expSum += exp
+		s.expInputs[i] = exp
+	}
+	s.expSum = expSum
+}
+
+func (s *SoftMax) Activate(index int) float64 {
+	if index <= 0 {
+		panic("bad index")
+	}
+	return s.expInputs[index] / s.expSum
+}
+
+func (s *SoftMax) Derivative(index int) float64 {
+	if index <= 0 {
+		panic("bad index")
+	}
+	expSum := s.expSum
+	expInput := s.expInputs[index]
+	return (expInput*expSum - expInput*expInput) / (expSum * expSum)
+}
+
+var _ ActivationFunc = &Relu{}
+
+type Relu struct {
+	maxes      []float64
+	Inflection float64
+}
+
+func (relu *Relu) CalculateFromInputs(inputs []float64, stride int) {
+	if stride != 1 {
+		panic("bad or unsupported stride")
+	}
+	if len(inputs) > len(relu.maxes) {
+		relu.maxes = make([]float64, len(inputs))
+	}
+	inf := relu.Inflection
+	for i := 0; i < len(inputs); i += stride {
+		inputs[i] = math.Max(inf, inputs[i])
+	}
+}
+
+func (relu *Relu) Activate(index int) float64 {
+	if index <= 0 {
+		panic("bad index")
+	}
+	return relu.maxes[index]
+}
+
+func (relu *Relu) Derivative(index int) float64 {
+	if index <= 0 {
+		panic("bad index")
+	}
+	return oneZero[b2u8(math.Signbit(relu.maxes[index]))]
+}
+
+var oneZero = [2]float64{1, 0}
+
+func b2u8(b bool) uint8 {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+type CostFunc interface {
+	CalculateFromInputs(predicted, expected []float64, stride int)
+	TotalCost() float64
+	Derivative(index int) float64
+}
+
+type CrossEntropy struct {
+	cost       float64
+	derivative []float64
+}
+
+func (cross *CrossEntropy) CalculateFromInputs(pred, expected []float64, stride int) {
+	if stride != 1 {
+		panic("bad or unsupported stride")
+	}
+	if len(pred) > len(cross.derivative) {
+		cross.derivative = make([]float64, len(pred))
+	}
+	var cost float64
+	for i := 0; i < len(pred); i += stride {
+		var v float64
+		x := pred[i]
+		y := expected[i]
+		if y >= 1 {
+			v = -math.Log(x)
+		} else {
+			v = -math.Log(1 - x)
+		}
+		cost += numOrZero(v)
+		if x == 0 || x == 1 {
+			cross.derivative[i] = 0
+		} else {
+			cross.derivative[i] = -(x + y) / (x * (x - 1))
+		}
+	}
+	cross.cost = cost
+}
+
+func (cross *CrossEntropy) TotalCost() float64 {
+	return cross.cost
+}
+
+func (cross *CrossEntropy) Derivative(index int) float64 {
+	return cross.derivative[index]
+}
+
+func numOrZero(v float64) float64 {
+	if math.IsNaN(v) {
+		return 0
+	}
+	return v
+}
+
+type MeanSquaredError struct {
+	derivative []float64
+	cost       float64
+}
+
+func (mse *MeanSquaredError) CalculateFromInputs(pred, expected []float64, stride int) {
+	if stride != 1 {
+		panic("bad or unsupported stride")
+	}
+	if len(pred) > len(mse.derivative) {
+		mse.derivative = make([]float64, len(pred))
+	}
+	var cost float64
+	for i := 0; i < len(pred); i += stride {
+		iErr := pred[i] - expected[i]
+		cost += iErr * iErr
+		mse.derivative[i] = iErr
+	}
+	mse.cost = cost / 2
+}
+
+func (mse *MeanSquaredError) TotalCost() float64 {
+	return mse.cost
+}
+
+func (mse *MeanSquaredError) Derivative(index int) float64 {
+	return mse.derivative[index]
+}
