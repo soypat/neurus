@@ -85,25 +85,30 @@ func (nn NetworkOptimized) UpdateGradients(data DataPoint, learnData []layerLear
 	// Feed data through network and store weights.
 	input := data.Input
 	for i, layer := range nn.layers {
-		learnData[i].inputs = input
 		weights, activations := layer.StoreOutputs(input)
-		input = activations
+		// Store result data to learnData structure.
+		learnData[i].inputs = input
 		na := copy(learnData[i].activations, activations)
 		n := copy(learnData[i].weightedInputs, weights)
 		if n == 0 || n != len(weights) || n != len(learnData[i].weightedInputs) || len(activations) != na {
 			panic("bad length")
 		}
+		// New input is activation from previous layer.
+		input = activations
 	}
 
 	// Begin backpropagation.
 	outputLayerIdx := len(nn.layers) - 1
 	outputLayer := nn.layers[outputLayerIdx]
 	outputLearnData := learnData[outputLayerIdx]
-	// Calculate Output layer node values.
+	// Calculate Output layer node values by evaluating partial derivatives
+	// for nodes: cost wrt activation and activation wrt weighted input.
 	nn.Cost.CalculateFromInputs(outputLearnData.activations, data.ExpectedOutput, 1)
 	for i := 0; i < len(outputLearnData.nodeValues); i++ {
-		outputLearnData.nodeValues[i] = nn.Cost.Derivative(i) * outputLayer.activationFunction.Derivative(i)
+		activationDerivative := outputLayer.activationFunction.Derivative(i)
+		outputLearnData.nodeValues[i] = nn.Cost.Derivative(i) * activationDerivative
 	}
+	outputLayer.UpdateGradients(outputLearnData)
 
 	// Update gradients of Output layer though backpropagation.
 	for i := outputLayerIdx - 1; i >= 0; i-- {

@@ -14,6 +14,7 @@ func ExampleNetworkOptimized_twoD() {
 		epochs    = 20000
 		numPrints = 10
 	)
+	activation := func() neurus.ActivationFunc { return new(neurus.Sigmd) }
 	canonClassifier := func(x, y float64) int {
 		if -x*x+0.5 > y {
 			return 1
@@ -32,10 +33,10 @@ func ExampleNetworkOptimized_twoD() {
 	// Create neural network and hyperparameters.
 	layerSizes := []int{2, 3, 2, 2}
 	nn := neurus.NewNetworkOptimized(layerSizes,
-		func() neurus.ActivationFunc { return new(neurus.Sigmd) },
+		activation,
 		&neurus.MeanSquaredError{}, rand.NewSource(1))
 	params := neurus.NewHyperParameters(layerSizes)
-
+	params.MiniBatchSize = 10
 	// Perform first learn iteration.
 	nn.Learn(trainData, params.LearnRateInitial, params.Regularization, params.Momentum)
 	initialCost := nn.Cost.TotalCost()
