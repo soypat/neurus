@@ -119,6 +119,38 @@ func (s *SoftMax) Derivative(index int) float64 {
 
 var _ ActivationFunc = &Relu{}
 
+type Sigmd struct {
+	output []float64
+}
+
+func (sigmoid *Sigmd) CalculateFromInputs(inputs []float64, stride int) {
+	if stride != 1 {
+		panic("bad or unsupported stride")
+	}
+	if len(inputs) > len(sigmoid.output) {
+		sigmoid.output = make([]float64, len(inputs))
+	}
+
+	for i := 0; i < len(inputs); i += stride {
+		sigmoid.output[i] = 1.0 / (1 + math.Exp(-inputs[i]))
+	}
+}
+
+func (sigmoid *Sigmd) Activate(index int) float64 {
+	if index < 0 {
+		panic("bad index")
+	}
+	return sigmoid.output[index]
+}
+
+func (sigmoid *Sigmd) Derivative(index int) float64 {
+	if index < 0 {
+		panic("bad index")
+	}
+	sig := sigmoid.output[index]
+	return sig * (1 - sig)
+}
+
 type Relu struct {
 	maxes      []float64
 	Inflection float64
@@ -133,19 +165,19 @@ func (relu *Relu) CalculateFromInputs(inputs []float64, stride int) {
 	}
 	inf := relu.Inflection
 	for i := 0; i < len(inputs); i += stride {
-		inputs[i] = math.Max(inf, inputs[i])
+		relu.maxes[i] = math.Max(inf, inputs[i])
 	}
 }
 
 func (relu *Relu) Activate(index int) float64 {
-	if index <= 0 {
+	if index < 0 {
 		panic("bad index")
 	}
 	return relu.maxes[index]
 }
 
 func (relu *Relu) Derivative(index int) float64 {
-	if index <= 0 {
+	if index < 0 {
 		panic("bad index")
 	}
 	return oneZero[b2u8(math.Signbit(relu.maxes[index]))]
