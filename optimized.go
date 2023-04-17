@@ -51,14 +51,14 @@ func (nn NetworkOptimized) StoreOutputs(firstInputs []float64) []float64 {
 		panic("length of inputs mismatches fist layer expected input length")
 	}
 	var (
-		inputs  = firstInputs
-		outputs []float64
+		inputs      = firstInputs
+		activations []float64
 	)
 	for i := 0; i < len(nn.layers); i++ {
-		_, outputs = nn.layers[i].StoreOutputs(inputs)
-		inputs = outputs // Next layer takes outputs as inputs.
+		_, activations = nn.layers[i].StoreOutputs(inputs)
+		inputs = activations // Next layer takes activations as inputs.
 	}
-	return outputs
+	return activations
 }
 
 func (nn *NetworkOptimized) Learn(trainingData []DataPoint, learnRate, regularization, momentum float64) {
