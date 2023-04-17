@@ -5,6 +5,7 @@ import (
 	"math/rand"
 
 	"golang.org/x/exp/constraints"
+	"golang.org/x/exp/slices"
 )
 
 type NetworkOptimized struct {
@@ -38,13 +39,30 @@ func NewNetworkOptimized(layerSizes []int, fn func() ActivationFunc, cost CostFu
 	return nn
 }
 
-func (nn NetworkOptimized) Classify(inputs []float64) (prediction int, outputs []float64) {
+func (nn *NetworkOptimized) Import(layers []LayerSetup, fn func() ActivationFunc) {
+	nn.layers = nil
+	for _, layer := range layers {
+		numNodesIn, numNodesOut := layer.Dims()
+		weights := make([]float64, numNodesIn*numNodesOut)
+		for nodeIn := 0; nodeIn < numNodesIn; nodeIn++ {
+			for nodeOut := 0; nodeOut < numNodesOut; nodeOut++ {
+				weights[nodeOut*numNodesIn+nodeIn] = layer.Weights[nodeIn][nodeOut]
+			}
+		}
+		lo := newLayerOptimized(numNodesIn, numNodesOut, fn(), rand.New(rand.NewSource(1)))
+		lo.weights = weights
+		lo.biases = slices.Clone(layer.Biases)
+		nn.layers = append(nn.layers, lo)
+	}
+}
+
+func (nn *NetworkOptimized) Classify(inputs []float64) (prediction int, outputs []float64) {
 	outputs = nn.StoreOutputs(inputs)
 	index := maxIdx(math.Inf(-1), outputs)
 	return index, outputs
 }
 
-func (nn NetworkOptimized) StoreOutputs(firstInputs []float64) []float64 {
+func (nn *NetworkOptimized) StoreOutputs(firstInputs []float64) []float64 {
 	numIn, _ := nn.Dims()
 	switch {
 	case len(firstInputs) != numIn:
@@ -81,7 +99,7 @@ func (nn *NetworkOptimized) Learn(trainingData []DataPoint, learnRate, regulariz
 	}
 }
 
-func (nn NetworkOptimized) UpdateGradients(data DataPoint, learnData []layerLearnData) {
+func (nn *NetworkOptimized) UpdateGradients(data DataPoint, learnData []layerLearnData) {
 	// Feed data through network and store weights.
 	input := data.Input
 	for i, layer := range nn.layers {
@@ -182,11 +200,19 @@ func (layer LayerOptimized) StoreOutputs(inputs []float64) (weightOut, activatio
 			weightedIn += inputs[nodeIn] * layer.weights[layer.getWeightIdx(nodeIn, nodeOut)]
 		}
 		weightOut[nodeOut] = weightedIn
+		if math.IsNaN(weightedIn) || math.IsInf(weightedIn, 0) {
+			panic("NaN/Inf in weight calculation")
+		}
 	}
+
 	// Apply activation function.
 	layer.activationFunction.CalculateFromInputs(weightOut, 1)
 	for i := range activations {
-		activations[i] = layer.activationFunction.Activate(i)
+		activation := layer.activationFunction.Activate(i)
+		if math.IsNaN(activation) || math.IsInf(activation, 0) {
+			panic("NaN/Inf activation value")
+		}
+		activations[i] = activation
 	}
 	return weightOut, activations
 }

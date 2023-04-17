@@ -3,6 +3,8 @@ package neurus
 import (
 	"math"
 	"math/rand"
+
+	"golang.org/x/exp/slices"
 )
 
 var defaultRng = rand.New(rand.NewSource(1))
@@ -101,4 +103,18 @@ func (layer LayerLvl0) CalculateOutputs(inputs []float64) (activations []float64
 		activations[nodeOut] = layer.activationFunction(weightedInput)
 	}
 	return activations
+}
+
+func (nn *NetworkLvl0) Export() (setup []LayerSetup) {
+	for _, layer := range nn.layers {
+		weights := make([][]float64, len(layer.weights))
+		for j := range weights {
+			weights[j] = slices.Clone(layer.weights[j])
+		}
+		setup = append(setup, LayerSetup{
+			Weights: weights,
+			Biases:  slices.Clone(layer.biases),
+		})
+	}
+	return setup
 }

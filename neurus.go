@@ -273,3 +273,12 @@ func (mse *MeanSquaredError) TotalCost() float64 {
 func (mse *MeanSquaredError) Derivative(index int) float64 {
 	return mse.derivative[index]
 }
+
+type LayerSetup struct {
+	Weights [][]float64 `json:"weights"`
+	Biases  []float64   `json:"biases"`
+}
+
+func (ls LayerSetup) Dims() (numNodesIn, numNodesOut int) {
+	return len(ls.Weights), len(ls.Biases)
+}

@@ -1,6 +1,7 @@
 package neurus_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"image/png"
 	"math"
@@ -20,20 +21,15 @@ func ExampleNetworkLvl0_twoD() {
 		epochs    = 200000
 		numPrints = 10
 	)
-	canonClassifier := func(x, y float64) int {
-		if -x*x+0.5 > y {
-			return 1
-		}
-		return 0
-	}
-	m := neurus.NewModel2D(2, canonClassifier)
+
+	m := neurus.NewModel2D(2, basic2DClassifier)
 	trainData := m.Generate2DData(400)
 	testData := m.Generate2DData(100)
 	fp, _ := os.Create("canon.png")
 	m.AddScatter(trainData)
 	png.Encode(fp, m)
 	fp.Close()
-	nn := neurus.NewNetworkLvl0(neurus.Sigmoid, 2, 3, 2, 2)
+	nn := neurus.NewNetworkLvl0(neurus.Sigmoid, 2, 2, 2, 2)
 	initialCost := nn.Cost(testData)
 
 	trainer := neurus.NewTrainerFromNetworkLvl0(nn)
@@ -57,6 +53,10 @@ func ExampleNetworkLvl0_twoD() {
 	}
 	fp, _ = os.Create("nn.png")
 	png.Encode(fp, m)
+	fp.Close()
+	fp, _ = os.Create("nn.json")
+	b, _ := json.Marshal(nn.Export())
+	fp.Write(b)
 	fp.Close()
 	//output:
 	// start cost:
@@ -95,6 +95,7 @@ func ExampleNetworkLvl0_mnist() {
 		class, cost := nn.Classify(testData[i].ExpectedOutput, testData[i].Input)
 		fmt.Println(expected.Num, class, cost)
 	}
+
 	//output:
 	// start cost:
 }
