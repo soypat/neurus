@@ -56,6 +56,24 @@ func (nn *NetworkOptimized) Import(layers []LayerSetup, fn func() ActivationFunc
 	}
 }
 
+func (nn *NetworkOptimized) Export() (exported []LayerSetup) {
+	for _, layer := range nn.layers {
+		numNodesIn, numNodesOut := layer.Dims()
+		weights := make([][]float64, numNodesIn)
+		for nodeIn := 0; nodeIn < numNodesIn; nodeIn++ {
+			weights[nodeIn] = make([]float64, numNodesOut)
+			for nodeOut := 0; nodeOut < numNodesOut; nodeOut++ {
+				weights[nodeIn][nodeOut] = layer.weights[layer.getWeightIdx(nodeIn, nodeOut)]
+			}
+		}
+		exported = append(exported, LayerSetup{
+			Weights: weights,
+			Biases:  slices.Clone(layer.biases),
+		})
+	}
+	return exported
+}
+
 func (nn *NetworkOptimized) Classify(inputs []float64) (prediction int, outputs []float64) {
 	outputs = nn.StoreOutputs(inputs)
 	index := maxIdx(math.Inf(-1), outputs)
@@ -105,10 +123,10 @@ func (nn *NetworkOptimized) UpdateGradients(data DataPoint, learnData []layerLea
 	for i, layer := range nn.layers {
 		weights, activations := layer.StoreOutputs(input)
 		// Store result data to learnData structure.
-		learnData[i].inputs = input
+		ni := copy(learnData[i].inputs, input)
 		na := copy(learnData[i].activations, activations)
 		n := copy(learnData[i].weightedInputs, weights)
-		if n == 0 || n != len(weights) || n != len(learnData[i].weightedInputs) || len(activations) != na {
+		if n == 0 || n != len(weights) || n != len(learnData[i].weightedInputs) || len(activations) != na || ni != len(input) {
 			panic("bad length")
 		}
 		// New input is activation from previous layer.
@@ -293,11 +311,12 @@ type layerLearnData struct {
 
 func newLayerLearnData(numNodesIn, numNodesOut int) layerLearnData {
 	// Do a single slab allocation for performance reasons.
-	slabAlloc := make([]float64, numNodesOut*3)
+	// slabAlloc := make([]float64, numNodesOut*3)
 	return layerLearnData{
-		weightedInputs: slabAlloc[0:numNodesOut],
-		activations:    slabAlloc[numNodesOut : 2*numNodesOut],
-		nodeValues:     slabAlloc[2*numNodesOut : 3*numNodesOut],
+		weightedInputs: make([]float64, numNodesOut),
+		activations:    make([]float64, numNodesOut),
+		nodeValues:     make([]float64, numNodesOut),
+		inputs:         make([]float64, numNodesIn),
 	}
 }
 

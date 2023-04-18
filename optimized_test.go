@@ -41,7 +41,7 @@ func TestNetworkOptimized_Import(t *testing.T) {
 
 func ExampleNetworkOptimized_twoD() {
 	const (
-		epochs    = 2000
+		epochs    = 7
 		numPrints = 10
 	)
 	activation := func() neurus.ActivationFunc { return new(neurus.Sigmd) }
@@ -82,7 +82,7 @@ func ExampleNetworkOptimized_twoD() {
 			startIdx := rand.Intn(len(trainData) - batchSize)
 			miniBatch := trainData[startIdx : startIdx+batchSize]
 			nn.Learn(miniBatch, params.LearnRateInitial, params.Regularization, params.Momentum)
-			if (epoch+1)%(epochs/numPrints) == 0 {
+			if (epoch+1)%(epochs/numPrints+1) == 0 {
 				fmt.Printf("epoch %d, cost: %0.5f\n", epoch, nn.Cost.TotalCost())
 			}
 		}
