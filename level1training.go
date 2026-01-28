@@ -33,7 +33,7 @@ func (nn NetworkLvl1) Cost(trainingData []DataPoint) (totalCost float64) {
 	return totalCost / float64(len(trainingData))
 }
 
-func (tr TrainerLvl1) TrainLvl0(nn NetworkLvl1, trainingData []DataPoint, h, learnRate float64) {
+func (tr TrainerLvl1) Train(nn NetworkLvl1, trainingData []DataPoint, h, learnRate float64) {
 	originalCost := nn.Cost(trainingData)
 	for layerIdx, layer := range nn.layers {
 		trLayer := tr.layers[layerIdx]
@@ -72,9 +72,9 @@ func (trl layerTrainerLvl1) applyAllGradients(layer LayerLvl1, learnRate float64
 	}
 }
 
-func (trl layerTrainerLvl1) UpdateAllGradients(layer LayerLvl1, dp DataPoint) {
+func (trl layerTrainerLvl1) UpdateAllGradients(layer LayerLvl1, dp DataPoint, learnRate float64) {
 	numNodesIn, numNodesOut := layer.Dims()
-	inputs := layer.CalculateOutputs(dp.Input)
+	_ = layer.CalculateOutputs(dp.Input)
 	for nodeOut := 0; nodeOut < numNodesOut; nodeOut++ {
 		layer.biases[nodeOut] -= trl.costGradB[nodeOut] * learnRate
 		for nodeIn := 0; nodeIn < numNodesIn; nodeIn++ {

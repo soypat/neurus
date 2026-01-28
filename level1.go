@@ -74,12 +74,12 @@ func (l LayerLvl1) Dims() (input, output int) {
 func newLayerLvl1(numNodesIn, numNodesOut int, activationFunction func(float64) float64) LayerLvl1 {
 	nn := LayerLvl1{
 		weights:            make([][]float64, numNodesIn),
-		biases:             randomSlice(numNodesOut, 2, -1),
+		biases:             randomSlice(numNodesOut, 2, -1, defaultRng),
 		activationFunction: activationFunction,
 	}
 	invSqrtNumNodesIn := 1 / math.Sqrt(float64(numNodesIn))
 	for nodeIn := range nn.weights {
-		nn.weights[nodeIn] = randomSlice(numNodesOut, 2*invSqrtNumNodesIn, -invSqrtNumNodesIn)
+		nn.weights[nodeIn] = randomSlice(numNodesOut, 2*invSqrtNumNodesIn, -invSqrtNumNodesIn, defaultRng)
 	}
 	return nn
 }

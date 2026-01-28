@@ -58,8 +58,6 @@ func ExampleNetworkLvl0_twoD() {
 	b, _ := json.Marshal(nn.Export())
 	fp.Write(b)
 	fp.Close()
-	//output:
-	// start cost:
 }
 func ExampleNetworkLvl0_mnist() {
 	const (
